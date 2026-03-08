@@ -1262,7 +1262,8 @@
     <div class="admin-badge">Admin Mode Active</div>
     <button class="admin-btn" onclick="openProfileModal()"><i data-lucide="edit"></i><span>Edit Profile</span></button>
     <button class="admin-btn" onclick="openProjectModal()"><i data-lucide="plus"></i><span>Add Project</span></button>
-    <button class="admin-btn" onclick="exportForSharing()"><i data-lucide="share-2"></i><span>Get Sharing Code</span></button>
+    <button class="admin-btn" onclick="exportForSharing()"><i data-lucide="share-2"></i><span>Get Sharing
+        Code</span></button>
     <button class="admin-btn logout" onclick="handleLogout()"><i data-lucide="x"></i><span>Logout</span></button>
     <div class="admin-projects">
       <p class="admin-projects-title">Manage Projects</p>
@@ -1461,7 +1462,6 @@
     const PROFILE_KEY = 'archProfile';
     const PROJECTS_KEY = 'archProjects';
     const USE_FIREBASE = false;
-    const dbRef = null;
     // ---------------------
 
     let isAdmin = localStorage.getItem('isAdmin') === 'true';
@@ -1469,7 +1469,7 @@
     // --- HARDCODED DATA ---
     // To make projects visible to everyone who opens your link, 
     // you can paste your exported project data here.
-    const HARDCODED_PROJECTS = []; 
+    const HARDCODED_PROJECTS = [];
     // ----------------------
 
     let editingProjectId = null;
@@ -1622,7 +1622,7 @@
     };
 
     // Load data
-    async function getProfile() { 
+    async function getProfile() {
       if (USE_FIREBASE && dbRef) {
         const snapshot = await dbRef.child('profile').once('value');
         if (snapshot.exists()) return snapshot.val();
@@ -1631,7 +1631,7 @@
       return stored || HARDCODED_PROFILE || defaultProfile;
     }
 
-    async function getProjects() { 
+    async function getProjects() {
       if (USE_FIREBASE && dbRef) {
         const snapshot = await dbRef.child('projects').once('value');
         if (snapshot.exists()) {
@@ -2342,7 +2342,7 @@
         const blob = base64ToBlob(project.pdf);
         if (!blob) throw new Error("Invalid PDF data");
         currentPdfUrl = URL.createObjectURL(blob);
-        
+
         // Mobile check: Open in new tab for better compatibility
         if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
           window.open(currentPdfUrl, '_blank');
@@ -2386,9 +2386,9 @@
         }
 
         const frame = document.getElementById('pdf-frame');
-        if (frame) { 
-          frame.src = ''; 
-          frame.src = currentPdfUrl; 
+        if (frame) {
+          frame.src = '';
+          frame.src = currentPdfUrl;
         }
         if (frame) frame.src = '';
         if (frame) frame.src = currentPdfUrl;
@@ -2414,7 +2414,7 @@
     async function downloadUpdatedSite() {
       const profile = await getProfile();
       const projects = await getProjects();
-      
+
       try {
         // Fetch the original source code to avoid capturing runtime UI states
         const response = await fetch(window.location.href);
@@ -2426,7 +2426,7 @@
 
         html = html.replace(/const HARDCODED_PROFILE = .*?;/, `const HARDCODED_PROFILE = ${profileJson};`);
         html = html.replace(/const HARDCODED_PROJECTS = .*?;/, `const HARDCODED_PROJECTS = ${projectsJson};`);
-        
+
         // Ensure the downloaded version starts with isAdmin = false for visitors
         html = html.replace(/let isAdmin = localStorage\.getItem\('isAdmin'\) === 'true';/, "let isAdmin = false;");
 
