@@ -1801,7 +1801,12 @@
       const projects = data || await getProjects();
       const list = document.getElementById('admin-projects-list');
 
-      if (!projects || projects.length === 0) {
+      console.log('=== RENDER ADMIN PROJECTS ===');
+      console.log('Total projects in storage:', projects.length);
+      console.log('Projects data:', projects);
+
+      if (projects.length === 0) {
+        console.log('No projects, showing empty state');
         list.innerHTML = '<p style="text-align: center; font-size: 12px; color: var(--muted-foreground);">No projects yet.</p>';
         return;
       }
@@ -1912,6 +1917,14 @@
       }
     }
 
+    function handleLogout() {
+      isAdmin = false;
+      localStorage.removeItem('isAdmin');
+      closeAdminPanel();
+      updateAdminUI();
+      showToast('Logged out successfully', 'info');
+    }
+
     function closeLoginModal() {
       const modal = document.getElementById('login-modal');
       if (modal) modal.classList.remove('active');
@@ -1924,15 +1937,6 @@
       if (password) password.value = '';
       if (errorEl) errorEl.style.display = 'none';
     }
-
-    function handleLogout() {
-      isAdmin = false;
-      localStorage.removeItem('isAdmin');
-      closeAdminPanel();
-      updateAdminUI();
-      showToast('Logged out successfully', 'info');
-    }
-
     // Project Modal
     async function openProjectModal(id = null) {
       editingProjectId = id ? Number(id) : null;
@@ -2385,7 +2389,6 @@
     }
 
     function base64ToBlob(base64) {
-      if (!base64 || !base64.includes(';base64,')) return null;
       const parts = base64.split(';base64,');
       const contentType = parts[0].split(':')[1];
       const raw = window.atob(parts[1]);
