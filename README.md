@@ -18,7 +18,22 @@ A professional, high-performance architecture portfolio designed to showcase des
 ## 🛠️ Setup & Customization
 1. **Admin Access**: The default credentials are set in `index.html` under the `ADMIN` constant.
 2. **Local Icons**: Ensure `js/lucide.min.js` is present in your project folder to avoid CDN blocking.
-3. **Deployment**: This project is ready for one-click deployment on **Netlify** or **Vercel**.
+3. **Deployment**: This project is ready for deployment on **GitHub Pages**, **Netlify**, or **Vercel**.
+
+### Deploying to GitHub Pages
+1. Create a new public repository on GitHub.
+2. Run these commands in your project folder:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/<username>/<repository-name>.git
+   git push -u origin main
+   ```
+3. On GitHub, go to **Settings > Pages**.
+4. Set **Source** to "Deploy from a branch" and select `main`.
+5. Your site will be live at `https://<username>.github.io/<repository-name>/`
 
 ---
 
