@@ -2226,6 +2226,12 @@
       reader.onload = (ev) => {
         tempProfileImage = ev.target.result;
         document.getElementById('profile-image-upload-text').textContent = 'Profile image selected';
+        // Update preview in modal if possible
+        // Update preview icon color to show success
+        const preview = document.querySelector('#profile-modal .file-upload i[data-lucide="image"]');
+        if (preview) {
+          preview.style.color = 'var(--primary)';
+        }
         showToast('Profile image loaded!', 'success');
       };
       reader.readAsDataURL(file);
@@ -2238,6 +2244,11 @@
       reader.onload = (ev) => {
         tempHeroImage = ev.target.result;
         document.getElementById('hero-upload-text').textContent = 'Hero image selected';
+        // Update preview icon color to show success
+        const preview = document.querySelector('#profile-modal .file-upload i[data-lucide="image"]');
+        if (preview) {
+          preview.style.color = 'var(--primary)';
+        }
         showToast('Hero image loaded!', 'success');
       };
       reader.readAsDataURL(file);
@@ -2250,6 +2261,12 @@
       reader.onload = (ev) => {
         tempCv = ev.target.result;
         document.getElementById('cv-upload-text').textContent = 'CV PDF selected';
+        const preview = document.getElementById('cv-preview-container');
+        const frame = document.getElementById('cv-preview-frame');
+        if (preview && frame) {
+          preview.style.display = 'block';
+          frame.src = ev.target.result;
+        }
         showToast('CV loaded!', 'success');
       };
       reader.readAsDataURL(file);
@@ -2285,6 +2302,11 @@
         console.log('Profile data to save:', newProfile);
 
         await saveProfile(newProfile);
+        
+        // Clear temp variables after successful save
+        tempCv = '';
+        tempHeroImage = '';
+        tempProfileImage = '';
         console.log('✓ Profile saved successfully');
 
         await renderProfile();
@@ -2351,7 +2373,7 @@
         currentPdfUrl = URL.createObjectURL(blob);
         if (frame) frame.src = currentPdfUrl;
       } catch (e) {
-        if (frame) frame.src = profile.cvPdf;
+        if (frame) frame.src = profile.cvPdf; // Fallback for direct URLs
       }
 
       const viewer = document.getElementById('pdf-viewer');
