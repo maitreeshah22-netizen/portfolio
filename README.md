@@ -15,4 +15,11 @@ A professional, high-performance architecture portfolio designed to showcase des
 - [Lucide Icons](https://lucide.dev/) (Local Distribution)
 - IndexedDB API
 
+## 🛠️ Setup & Customization
+1. **Admin Access**: The default credentials are set in `index.html` under the `ADMIN` constant.
+2. **Local Icons**: Ensure `js/lucide.min.js` is present in your project folder to avoid CDN blocking.
+3. **Deployment**: This project is ready for one-click deployment on **Netlify** or **Vercel**.
+
+---
+
 © 2024 Maitree Shah. All rights reserved.
