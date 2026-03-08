@@ -1620,43 +1620,53 @@
 
     // Load data
     async function getProfile() { 
+      if (USE_FIREBASE && dbRef) {
+        const snapshot = await dbRef.child('profile').once('value');
+        if (snapshot.exists()) return snapshot.val();
+      }
       const stored = await getData(PROFILE_KEY, null);
       return stored || HARDCODED_PROFILE || defaultProfile; 
     }
 
     async function getProjects() { 
+      if (USE_FIREBASE && dbRef) {
+        const snapshot = await dbRef.child('projects').once('value');
+        if (snapshot.exists()) {
+          const val = snapshot.val();
+          return Array.isArray(val) ? val : Object.values(val);
+        }
+      }
       const projects = await getData(PROJECTS_KEY, null);
       return (projects && projects.length > 0) ? projects : HARDCODED_PROJECTS; 
     }
 
     async function saveProfile(profile) {
-      console.log("💾 Saving profile to database...");
-      console.log("   Name:", profile.name);
-      console.log("   Email:", profile.email);
-
       try {
-        await setData(PROFILE_KEY, profile);
-        console.log("✓ Profile saved to IndexedDB successfully");
-
+        if (USE_FIREBASE && dbRef) {
+          await dbRef.child('profile').set(profile);
+        }
+        // We skip local storage to avoid "storage full" errors with large files
         await renderProfile();
-        console.log("✓ Profile rendered");
-
         return true;
       } catch (e) {
         console.error("❌ Error saving profile:", e);
-        throw e;
+        showToast('Error saving profile to cloud!', 'error');
+        return false;
       }
     }
 
     async function saveProjects(projects) {
       try {
-        console.log("Saving projects list...");
-        await setData(PROJECTS_KEY, projects);
+        if (USE_FIREBASE && dbRef) {
+          await dbRef.child('projects').set(projects);
+        }
+        // We skip local storage to avoid "storage full" errors with large files
         await renderProjects();
         await renderAdminProjects();
         return true;
       } catch (e) {
-        showToast('Error saving project! Storage might be full.', 'error');
+        console.error("Save failed:", e);
+        showToast('Error saving project to cloud!', 'error');
         return false;
       }
     }
@@ -2373,12 +2383,9 @@
         }
 
         const frame = document.getElementById('pdf-frame');
-        if (frame) { 
-          frame.src = ''; 
-          frame.src = currentPdfUrl; 
+        if (frame) {
+          frame.src = currentPdfUrl;
         }
-        if (frame) frame.src = '';
-        if (frame) frame.src = currentPdfUrl;
       } catch (e) {
         window.open(profile.cvPdf, '_blank');
       }
