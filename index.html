@@ -12,6 +12,10 @@
   <meta property="og:title" content="Maitree Shah - Architecture Portfolio">
   <meta property="og:description" content="Designing spaces that inspire. View my latest architectural projects and skills.">
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
   <title>Maitree Shah - Architecture Portfolio</title>
   <link
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap"
@@ -1472,6 +1476,13 @@
     let tempHeroImage = '';
     let tempProfileImage = '';
 
+    // Initialize Firebase if enabled
+    let dbRef = null;
+    if (USE_FIREBASE && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+      firebase.initializeApp(firebaseConfig);
+      dbRef = firebase.database().ref();
+    }
+
     // Helper to handle admin button click based on state
     function handleAdminClick(e) {
       if (e) e.preventDefault();
@@ -1656,6 +1667,8 @@
       document.getElementById('nav-name').textContent = profile.name;
       document.getElementById('profile-name').textContent = profile.name;
       document.getElementById('profile-title').textContent = profile.title || "Architect Student";
+      const displayTitle = (profile.title || "Architect Student").replace(/\s*&\s*Founder/gi, '').replace(/Founder/gi, '').trim() || "Architect Student";
+      document.getElementById('profile-title').textContent = (displayTitle === "Architect") ? "Architect Student" : displayTitle;
       document.getElementById('profile-email').textContent = profile.email;
       document.getElementById('profile-phone').textContent = profile.phone;
       document.getElementById('profile-bio').textContent = profile.bio;
@@ -2315,15 +2328,15 @@
         currentPdfUrl = URL.createObjectURL(blob);
         
         // Mobile check: Open in new tab for better compatibility on phones
+        // Mobile check: Open in new tab for better compatibility
         if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
           window.open(currentPdfUrl, '_blank');
           return;
         }
 
         const frame = document.getElementById('pdf-frame');
-        if (frame) { 
-          frame.src = ''; 
-          frame.src = currentPdfUrl; 
+        if (frame) {
+          frame.src = currentPdfUrl;
         }
       } catch (e) {
         window.open(project.pdf, '_blank');
@@ -2364,6 +2377,8 @@
           frame.src = ''; 
           frame.src = currentPdfUrl; 
         }
+        if (frame) frame.src = '';
+        if (frame) frame.src = currentPdfUrl;
       } catch (e) {
         window.open(profile.cvPdf, '_blank');
       }
@@ -2385,7 +2400,7 @@
     async function downloadUpdatedSite() {
       const profile = await getProfile();
       const projects = await getProjects();
-
+      
       try {
         // Fetch the original source code to avoid capturing runtime UI states
         const response = await fetch(window.location.href);
@@ -2397,6 +2412,9 @@
 
         html = html.replace(/const HARDCODED_PROFILE = .*?;/, `const HARDCODED_PROFILE = ${profileJson};`);
         html = html.replace(/const HARDCODED_PROJECTS = .*?;/, `const HARDCODED_PROJECTS = ${projectsJson};`);
+        
+        // Ensure the downloaded version starts with isAdmin = false for visitors
+        html = html.replace(/let isAdmin = localStorage\.getItem\('isAdmin'\) === 'true';/, "let isAdmin = false;");
 
         const blob = new Blob([html], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
@@ -2406,9 +2424,10 @@
         a.click();
         URL.revokeObjectURL(url);
 
-        showToast('Updated index.html downloaded! Replace your local file and push to Git/Netlify.', 'success');
+        showToast('Updated index.html downloaded!', 'success');
       } catch (e) {
-        showToast('Failed to generate file. Try again.', 'error');
+        console.error('Download failed:', e);
+        showToast('Failed to generate file.', 'error');
       }
     }
 
