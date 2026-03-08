@@ -1672,6 +1672,7 @@
       document.getElementById('profile-email').textContent = profile.email;
       document.getElementById('profile-phone').textContent = profile.phone;
       document.getElementById('profile-bio').textContent = profile.bio;
+      document.getElementById('profile-bio').textContent = profile.bio.replace(/Founded/gi, 'With').replace(/Founder/gi, '').trim();
       document.getElementById('profile-address').textContent = profile.address;
       document.getElementById('profile-projects').textContent = profile.stats.projects;
       document.getElementById('hero-img-display').src = profile.heroImage || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80";
@@ -1796,17 +1797,7 @@
       console.log('=== END RENDER ===');
     }
 
-    async function renderAdminProjects() {
-      const projects = await getProjects();
-      const list = document.getElementById('admin-projects-list');
-
-      console.log('=== RENDER ADMIN PROJECTS ===');
-      console.log('Total projects in storage:', projects.length);
-      console.log('Projects data:', projects);
-
-      if (projects.length === 0) {
-        console.log('No projects, showing empty state');
-        list.innerHTML = '<p style="text-align: center; font-size: 12px; color: var(--muted-foreground);">No projects yet.</p>';
+    async function renderAdminProjects(t-align: center; font-size: 12px; color: var(--muted-foreground);">No projects yet.</p>';
         return;
       }
 
@@ -2144,6 +2135,9 @@
       document.getElementById('edit-name').value = profile.name;
       document.getElementById('edit-title').value = profile.title || "Architect Student";
       document.getElementById('edit-bio').value = profile.bio || "";
+      const editTitle = (profile.title || "Architect Student").replace(/\s*&\s*Founder/gi, '').replace(/Founder/gi, '').trim();
+      document.getElementById('edit-title').value = editTitle === "Architect" ? "Architect Student" : editTitle;
+      document.getElementById('edit-bio').value = (profile.bio || "").replace(/Founded/gi, 'With').replace(/Founder/gi, '').trim();
       document.getElementById('edit-phone').value = profile.phone;
       document.getElementById('edit-address').value = profile.address;
       document.getElementById('cv-upload-text').textContent = profile.cvPdf ? 'Current CV (click to change)' : 'Click to upload CV PDF';
@@ -2385,6 +2379,7 @@
     }
 
     function base64ToBlob(base64) {
+      if (!base64 || !base64.includes(';base64,')) return null;
       const parts = base64.split(';base64,');
       const contentType = parts[0].split(':')[1];
       const raw = window.atob(parts[1]);
