@@ -1655,11 +1655,10 @@
       const profile = await getProfile();
       document.getElementById('nav-name').textContent = profile.name;
       document.getElementById('profile-name').textContent = profile.name;
-      const displayTitle = (profile.title || "Architect Student").replace(/\s*&\s*Founder/gi, '').replace(/Founder/gi, '').trim() || "Architect Student";
-      document.getElementById('profile-title').textContent = (displayTitle === "Architect") ? "Architect Student" : displayTitle;
+      document.getElementById('profile-title').textContent = profile.title || "Architect Student";
       document.getElementById('profile-email').textContent = profile.email;
       document.getElementById('profile-phone').textContent = profile.phone;
-      document.getElementById('profile-bio').textContent = profile.bio.replace(/Founded/gi, 'With').replace(/Founder/gi, '').trim();
+      document.getElementById('profile-bio').textContent = profile.bio;
       document.getElementById('profile-address').textContent = profile.address;
       document.getElementById('profile-projects').textContent = profile.stats.projects;
       document.getElementById('hero-img-display').src = profile.heroImage || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80";
@@ -2130,9 +2129,8 @@
       tempProfileImage = '';
 
       document.getElementById('edit-name').value = profile.name;
-      const editTitle = (profile.title || "Architect Student").replace(/\s*&\s*Founder/gi, '').replace(/Founder/gi, '').trim();
-      document.getElementById('edit-title').value = editTitle === "Architect" ? "Architect Student" : editTitle;
-      document.getElementById('edit-bio').value = (profile.bio || "").replace(/Founded/gi, 'With').replace(/Founder/gi, '').trim();
+      document.getElementById('edit-title').value = profile.title || "Architect Student";
+      document.getElementById('edit-bio').value = profile.bio || "";
       document.getElementById('edit-phone').value = profile.phone;
       document.getElementById('edit-address').value = profile.address;
       document.getElementById('cv-upload-text').textContent = profile.cvPdf ? 'Current CV (click to change)' : 'Click to upload CV PDF';
@@ -2312,19 +2310,21 @@
       if (!project || !project.pdf) return;
 
       try {
+        if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
         const blob = base64ToBlob(project.pdf);
         currentPdfUrl = URL.createObjectURL(blob);
         
-        // Mobile check: Open in new tab for better compatibility
+        // Mobile check: Open in new tab for better compatibility on phones
         if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
           window.open(currentPdfUrl, '_blank');
           return;
         }
 
         const frame = document.getElementById('pdf-frame');
-        if (frame) frame.src = '';
-        if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
-        if (frame) frame.src = currentPdfUrl;
+        if (frame) { 
+          frame.src = ''; 
+          frame.src = currentPdfUrl; 
+        }
       } catch (e) {
         window.open(project.pdf, '_blank');
       }
@@ -2350,6 +2350,7 @@
       }
 
       try {
+        if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
         const blob = base64ToBlob(profile.cvPdf);
         currentPdfUrl = URL.createObjectURL(blob);
         
@@ -2359,8 +2360,10 @@
         }
 
         const frame = document.getElementById('pdf-frame');
-        if (frame) frame.src = '';
-        if (frame) frame.src = currentPdfUrl;
+        if (frame) { 
+          frame.src = ''; 
+          frame.src = currentPdfUrl; 
+        }
       } catch (e) {
         window.open(profile.cvPdf, '_blank');
       }
@@ -2382,32 +2385,31 @@
     async function downloadUpdatedSite() {
       const profile = await getProfile();
       const projects = await getProjects();
-      
-      // Get the current HTML source
-      let html = document.documentElement.outerHTML;
-      
-      // Clean up runtime UI states (remove 'active' classes from modals/panels)
-      html = html.replace(/ class=".*?active.*?"/g, (match) => match.replace('active', ''));
-      
-      // Inject the current data into the hardcoded variables
-      const profileJson = JSON.stringify(profile);
-      const projectsJson = JSON.stringify(projects);
-      
-      html = html.replace(/const HARDCODED_PROFILE = .*?;/, `const HARDCODED_PROFILE = ${profileJson};`);
-      html = html.replace(/const HARDCODED_PROJECTS = .*?;/, `const HARDCODED_PROJECTS = ${projectsJson};`);
-      
-      // Ensure the downloaded version starts with isAdmin = false
-      html = html.replace(/let isAdmin = localStorage\.getItem\('isAdmin'\) === 'true';/, "let isAdmin = false;");
-      
-      const blob = new Blob(['<!DOCTYPE html>\n' + html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'index.html';
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      showToast('Updated index.html downloaded! Replace your local file and push to Git.', 'success');
+
+      try {
+        // Fetch the original source code to avoid capturing runtime UI states
+        const response = await fetch(window.location.href);
+        let html = await response.text();
+
+        // Inject the current data into the hardcoded variables
+        const profileJson = JSON.stringify(profile);
+        const projectsJson = JSON.stringify(projects);
+
+        html = html.replace(/const HARDCODED_PROFILE = .*?;/, `const HARDCODED_PROFILE = ${profileJson};`);
+        html = html.replace(/const HARDCODED_PROJECTS = .*?;/, `const HARDCODED_PROJECTS = ${projectsJson};`);
+
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'index.html';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showToast('Updated index.html downloaded! Replace your local file and push to Git/Netlify.', 'success');
+      } catch (e) {
+        showToast('Failed to generate file. Try again.', 'error');
+      }
     }
 
     // Contact
