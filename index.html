@@ -1451,6 +1451,14 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // --- CONFIGURATION ---
+    // WARNING: Since this is a client-side app, these credentials are visible in the source code.
+    // Change these to something unique before sharing your URL.
+    const ADMIN = { username: 'admin', password: 'admin123' };
+    const PROFILE_KEY = 'archProfile';
+    const PROJECTS_KEY = 'archProjects';
+    // ---------------------
+
     let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
     let editingProjectId = null;
     let tempCoverImage = '';
