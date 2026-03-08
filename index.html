@@ -1258,6 +1258,7 @@
     <div class="admin-badge">Admin Mode Active</div>
     <button class="admin-btn" onclick="openProfileModal()"><i data-lucide="edit"></i><span>Edit Profile</span></button>
     <button class="admin-btn" onclick="openProjectModal()"><i data-lucide="plus"></i><span>Add Project</span></button>
+    <button class="admin-btn" onclick="exportForSharing()"><i data-lucide="share-2"></i><span>Get Sharing Code</span></button>
     <button class="admin-btn logout" onclick="handleLogout()"><i data-lucide="x"></i><span>Logout</span></button>
     <div class="admin-projects">
       <p class="admin-projects-title">Manage Projects</p>
@@ -1458,6 +1459,13 @@
     // ---------------------
 
     let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+
+    // --- HARDCODED DATA ---
+    // To make projects visible to everyone who opens your link, 
+    // you can paste your exported project data here.
+    const HARDCODED_PROJECTS = []; 
+    // ----------------------
+
     let editingProjectId = null;
     let tempCoverImage = '';
     let tempPdf = '';
@@ -1530,7 +1538,7 @@
           }
 
           // Stable version for Netlify production
-          const request = indexedDB.open(DB_NAME, 4);
+          const request = indexedDB.open(DB_NAME, 5);
 
           request.onupgradeneeded = (e) => {
             const db = e.target.result;
@@ -1555,16 +1563,7 @@
           const transaction = db.transaction(STORE_NAME, 'readonly');
           const request = transaction.objectStore(STORE_NAME).get(key);
           request.onsuccess = async () => {
-            if (request.result === undefined) {
-              const localData = localStorage.getItem(key);
-              if (localData) {
-                try {
-                  const parsed = JSON.parse(localData);
-                  await setData(key, parsed);
-                  resolve(parsed);
-                } catch (e) { resolve(defaultValue); }
-              } else resolve(defaultValue);
-            } else resolve(request.result);
+            resolve(request.result !== undefined ? request.result : defaultValue);
           };
           request.onerror = () => resolve(defaultValue);
         });
@@ -1611,7 +1610,18 @@
 
     // Load data
     async function getProfile() { return await getData(PROFILE_KEY, defaultProfile); }
-    async function getProjects() { return await getData(PROJECTS_KEY, []); }
+    async function getProjects() { 
+      // Try IndexedDB first
+      let projects = await getData(PROJECTS_KEY, null);
+      
+      // Fallback to LocalStorage for better persistence across refreshes
+      if (!projects || projects.length === 0) {
+        const localData = localStorage.getItem(PROJECTS_KEY);
+        if (localData) try { projects = JSON.parse(localData); } catch(e) {}
+      }
+      
+      return (projects && projects.length > 0) ? projects : HARDCODED_PROJECTS; 
+    }
 
     async function saveProfile(profile) {
       console.log("💾 Saving profile to database...");
@@ -1636,6 +1646,7 @@
       try {
         console.log("Saving projects list...");
         await setData(PROJECTS_KEY, projects);
+        localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects)); // Backup
         await renderProjects();
         await renderAdminProjects();
         return true;
@@ -1720,13 +1731,10 @@
       const projects = await getProjects();
       const grid = document.getElementById('projects-grid');
 
-      console.log('=== RENDER PROJECTS ===');
-      console.log('Total projects in storage:', projects.length);
-      console.log('Projects data:', projects);
-
-      if (projects.length === 0) {
+      if (!projects || projects.length === 0) {
         console.log('No projects found, showing empty state');
-        grid.innerHTML = '<div class="empty-state"><p style="font-size: 18px;">No projects added yet.</p><p style="margin-top: 8px; font-size: 14px;">Login as Admin to add your first project.</p></div>';
+        const msg = isAdmin ? "Add your first project using the Admin Panel." : "Portfolio projects will appear here soon.";
+        grid.innerHTML = `<div class="empty-state"><p style="font-size: 18px;">No projects found.</p><p style="margin-top: 8px; font-size: 14px;">${msg}</p></div>`;
         return;
       }
 
@@ -2330,17 +2338,22 @@
       const project = projects.find(p => p.id === numId);
       if (!project || !project.pdf) return;
 
-      const frame = document.getElementById('pdf-frame');
-      if (frame) frame.src = '';
-
-      if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
-
       try {
         const blob = base64ToBlob(project.pdf);
         currentPdfUrl = URL.createObjectURL(blob);
+        
+        // Mobile check: Open in new tab for better compatibility
+        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          window.open(currentPdfUrl, '_blank');
+          return;
+        }
+
+        const frame = document.getElementById('pdf-frame');
+        if (frame) frame.src = '';
+        if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
         if (frame) frame.src = currentPdfUrl;
       } catch (e) {
-        if (frame) frame.src = project.pdf;
+        window.open(project.pdf, '_blank');
       }
       const viewer = document.getElementById('pdf-viewer');
       if (viewer) viewer.classList.add('active');
@@ -2363,17 +2376,20 @@
         return;
       }
 
-      const frame = document.getElementById('pdf-frame');
-      if (frame) frame.src = '';
-
-      if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
-
       try {
         const blob = base64ToBlob(profile.cvPdf);
         currentPdfUrl = URL.createObjectURL(blob);
+        
+        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          window.open(currentPdfUrl, '_blank');
+          return;
+        }
+
+        const frame = document.getElementById('pdf-frame');
+        if (frame) frame.src = '';
         if (frame) frame.src = currentPdfUrl;
       } catch (e) {
-        if (frame) frame.src = profile.cvPdf; // Fallback for direct URLs
+        window.open(profile.cvPdf, '_blank');
       }
 
       const viewer = document.getElementById('pdf-viewer');
@@ -2388,6 +2404,14 @@
       const uInt8Array = new Uint8Array(rawLength);
       for (let i = 0; i < rawLength; ++i) uInt8Array[i] = raw.charCodeAt(i);
       return new Blob([uInt8Array], { type: contentType });
+    }
+
+    async function exportForSharing() {
+      const projects = await getProjects();
+      const code = `// PASTE THIS INTO YOUR index.html SCRIPT SECTION\nconst HARDCODED_PROJECTS = ${JSON.stringify(projects)};`;
+      console.log(code);
+      alert("Sharing code generated in browser console (F12). Copy it and paste it into the HARDCODED_PROJECTS variable in your index.html to make projects visible to everyone.");
+      showToast('Check console for sharing code!', 'info');
     }
 
     // Contact
