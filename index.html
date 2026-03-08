@@ -1451,6 +1451,12 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // --- CONFIGURATION ---
+    const ADMIN = { username: 'admin', password: 'admin123' };
+    const PROFILE_KEY = 'archProfile';
+    const PROJECTS_KEY = 'archProjects';
+    // ---------------------
+
     let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
     let editingProjectId = null;
     let tempCoverImage = '';
